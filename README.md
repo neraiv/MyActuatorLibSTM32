@@ -11,19 +11,27 @@ My Actuator Library for STM32 using HAL Libraries. This library targets RMD moto
     - Current speed
     - Error status
     - PID parameters
+    - Acceleration parameters
 
   - ## Can drive motor with multiple control methods
 
     Every control method starts with myControl...
+    - Torque control
+    - Speed control
     - Single turn control with or without speed
     - Multi turn control with or without speed
-    - Speed control
-    - Stop motor
+    - Stop and shutdown motor
 
   - ## Can write parameters
 
     Every write method starts with myWrite...
-    - Write encoder zero
+    - PID parameters to RAM or ROM
+    - Acceleration parameters
+    - Encoder zero
+   
+  - ## Error checkers
+  - Check and clear error flags
+  - Check motor state (runing or stop)
 
 # Usage
 
@@ -34,15 +42,24 @@ My Actuator Library for STM32 using HAL Libraries. This library targets RMD moto
   ```C
   MyActuator myActuator1;
   MyActuator myActuator2;
-  MyCan myCan;
+  MyCan myCan1;
   ```
-- Initiliaze CanBus and give ur motor an ID if its already have one
+- Initiliaze CanBus.
 
   ```C
   myCan.hcanx = YOUR_CAN_Handle // Like hcan1 for canbus 1
-  myActuator1.canID = YOUR_CAN_ID1 //Like 0x143 motor IDs start starts from 0x140 to 0x180
-  myActuator2.canID = YOUR_CAN_ID2 
-  myInitCanBus(MmyCan);
+  myInitCanBus(myCan1);
+  ```
+- Then initliaze ur motor and match them with a myCan using myCreateActuator function. U must give motor ID to myActuator struct to communicate with it via Canbus and give it a maxspeed u can change this speed later.
+
+  ```C
+  myCreateActuator(&myActuator1,&myCan1,0x141,500);  // CANID of motor is 0x141 and max speed is 500 degree per second
+  myCreateActuator(&myActuator2,&myCan1,0x142,5000); // CANID of motor is 0x142 and max speed is 5000 degree per second
+  ```
+
+- Now u can use all functions. Try myReadMotorStatus function to read temperature, encoder, current etc.
+  ```C
+  myReadMotorStatus(&myActuator1);
   ```
 
 
