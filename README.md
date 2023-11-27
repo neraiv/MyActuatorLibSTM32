@@ -61,6 +61,8 @@ My Actuator Library for STM32 using HAL Libraries. This library targets RMD moto
   ```C
   myReadMotorStatus(&myActuator1);
   ```
+  ![image](https://github.com/neraiv/MyActuatorLibSTM32/assets/122676073/5f39795b-2b0a-4d8c-afa2-ec9d62621590)
+
 
 
 
