@@ -19,6 +19,27 @@ void getMotorParameters(MyActuator* _myActuator){
 	_myActuator->myActStat.encoder = ((uint16_t)_myActuator->myCan->rx.data[7] << 8) | _myActuator->myCan->rx.data[6];
 }
 
+int8_t sendAndRecieveData(MyActuator* _myActuator){
+	uint8_t tries = 0;
+
+	do{
+		HAL_CAN_AddTxMessage(_myActuator->myCan->hcan, &_myActuator->myCan->tx.header, _myActuator->myCan->tx.data, &_myActuator->myCan->tx.mailbox);
+		HAL_Delay(1);
+		HAL_CAN_GetRxMessage(_myActuator->myCan->hcan, _myActuator->myCan->canFilter.FilterFIFOAssignment, &_myActuator->myCan->rx.header, _myActuator->myCan->rx.data);
+		tries++;
+		if(tries > MAX_TRIES_TO_RECIEVE_DATA){
+			_myActuator->errors.errorCommunaciton = 1;
+			return -1;
+		}
+	}while((_myActuator->myCan->rx.data[0] != _myActuator->myCan->tx.data[0]) && (_myActuator->canID != _myActuator->myCan->rx.header.StdId));
+
+	return 0;
+}
+
+void myErrorHandler(){
+
+}
+
 int8_t myInitCanbus(MyCan* myCan){
 	myCan->canFilter.FilterActivation = ENABLE;
 	myCan->canFilter.FilterBank = 0;
@@ -51,21 +72,14 @@ int8_t myCreateActuator(MyActuator* _myActuator, MyCan* myCan, uint32_t canID, u
 }
 
 void myReadPID(MyActuator* _myActuator){
-	uint8_t tries = 0;
 	_myActuator->myCan->tx.header.StdId = _myActuator->canID;
 
 	_myActuator->myCan->tx.data[0] = READ_PID;
-	do{
-		HAL_CAN_AddTxMessage(_myActuator->myCan->hcan, &_myActuator->myCan->tx.header, _myActuator->myCan->tx.data, &_myActuator->myCan->tx.mailbox);
-		HAL_Delay(1);
-		HAL_CAN_GetRxMessage(_myActuator->myCan->hcan, _myActuator->myCan->canFilter.FilterFIFOAssignment, &_myActuator->myCan->rx.header, _myActuator->myCan->rx.data);
-		tries++;
-		if(tries > MAX_TRIES_TO_RECIEVE_DATA){
-			_myActuator->errors.errorCommunaciton = 1;
-			return;
-		}
-	}while((_myActuator->myCan->rx.data[0] != READ_PID) && (_myActuator->canID != _myActuator->myCan->rx.header.StdId));
 
+	if(sendAndRecieveData(_myActuator) < 0){
+		myErrorHandler();
+		return;
+	}
 
 	_myActuator->myPIDVals.PosKI = _myActuator->myCan->rx.data[2];
 	_myActuator->myPIDVals.PosKP = _myActuator->myCan->rx.data[3];
@@ -79,22 +93,14 @@ void myReadPID(MyActuator* _myActuator){
 }
 
 void myReadAccelPID(MyActuator* _myActuator){
-	uint8_t tries = 0;
-
 	_myActuator->myCan->tx.header.StdId = _myActuator->canID;
 
 	_myActuator->myCan->tx.data[0] = READ_ACCEL_PID;
-	do{
-		HAL_CAN_AddTxMessage(_myActuator->myCan->hcan, &_myActuator->myCan->tx.header, _myActuator->myCan->tx.data, &_myActuator->myCan->tx.mailbox);
-		HAL_Delay(1);
-		HAL_CAN_GetRxMessage(_myActuator->myCan->hcan, _myActuator->myCan->canFilter.FilterFIFOAssignment, &_myActuator->myCan->rx.header, _myActuator->myCan->rx.data);
-		tries++;
-		if(tries > MAX_TRIES_TO_RECIEVE_DATA){
-			_myActuator->errors.errorCommunaciton = 1;
-			return;
-		}
-	}while((_myActuator->myCan->rx.data[0] != READ_ACCEL_PID) && (_myActuator->canID != _myActuator->myCan->rx.header.StdId));
 
+	if(sendAndRecieveData(_myActuator) < 0){
+		myErrorHandler();
+		return;
+	}
 	_myActuator->myPIDVals.accelSpeed =((int32_t)_myActuator->myCan->rx.data[5] << 8 | _myActuator->myCan->rx.data[4]);
 	_myActuator->myPIDVals.accelTorque =((int32_t)_myActuator->myCan->rx.data[7] << 8 | _myActuator->myCan->rx.data[6]);
 
@@ -102,22 +108,14 @@ void myReadAccelPID(MyActuator* _myActuator){
 }
 
 void myReadEncoder(MyActuator* _myActuator){
-	uint8_t tries = 0;
-
 	_myActuator->myCan->tx.header.StdId = _myActuator->canID;
 
 	_myActuator->myCan->tx.data[0] = READ_ENCODER;
 
-	do{
-		HAL_CAN_AddTxMessage(_myActuator->myCan->hcan, &_myActuator->myCan->tx.header, _myActuator->myCan->tx.data, &_myActuator->myCan->tx.mailbox);
-		HAL_Delay(1);
-		HAL_CAN_GetRxMessage(_myActuator->myCan->hcan, _myActuator->myCan->canFilter.FilterFIFOAssignment, &_myActuator->myCan->rx.header, _myActuator->myCan->rx.data);
-		tries++;
-		if(tries > MAX_TRIES_TO_RECIEVE_DATA){
-			_myActuator->errors.errorCommunaciton = 1;
-			return;
-		}
-	}while((_myActuator->myCan->rx.data[0] != READ_ENCODER) && (_myActuator->canID == _myActuator->myCan->rx.header.StdId));
+	if(sendAndRecieveData(_myActuator) < 0){
+		myErrorHandler();
+		return;
+	}
 
 	_myActuator->myActStat.encoder =((uint16_t)_myActuator->myCan->rx.data[3] << 8 | _myActuator->myCan->rx.data[2]);
 	_myActuator->myActStat.encoderRaw =((uint16_t)_myActuator->myCan->rx.data[5] << 8 | _myActuator->myCan->rx.data[4]);
@@ -127,24 +125,14 @@ void myReadEncoder(MyActuator* _myActuator){
 }
 
 void myReadSingleTurnAngle(MyActuator* _myActuator){
-
-	uint8_t tries = 0;
-
 	_myActuator->myCan->tx.header.StdId = _myActuator->canID;
 
 	_myActuator->myCan->tx.data[0] = READ_SINGLE_TURN_ANGLE;
 
-	do{
-		HAL_CAN_AddTxMessage(_myActuator->myCan->hcan, &_myActuator->myCan->tx.header, _myActuator->myCan->tx.data, &_myActuator->myCan->tx.mailbox);
-		HAL_Delay(1);
-		HAL_CAN_GetRxMessage(_myActuator->myCan->hcan, _myActuator->myCan->canFilter.FilterFIFOAssignment, &_myActuator->myCan->rx.header, _myActuator->myCan->rx.data);
-		tries++;
-		if(tries > MAX_TRIES_TO_RECIEVE_DATA){
-			_myActuator->errors.errorCommunaciton = 1;
-			break;
-		}
-	}while((_myActuator->myCan->rx.data[0] != READ_SINGLE_TURN_ANGLE) && (_myActuator->canID != _myActuator->myCan->rx.header.StdId));
-
+	if(sendAndRecieveData(_myActuator) < 0){
+		myErrorHandler();
+		return;
+	}
 	_myActuator->myActStat.singleTurneAngle = ((int16_t) _myActuator->myCan->rx.data[7]<<8 | _myActuator->myCan->rx.data[6]);
 
 	clearBuffers(_myActuator->myCan);
@@ -152,22 +140,14 @@ void myReadSingleTurnAngle(MyActuator* _myActuator){
 
 void myReadMultiTurnAngle(MyActuator* _myActuator){
 
-	uint8_t tries = 0;
-
 	_myActuator->myCan->tx.header.StdId = _myActuator->canID;
 
 	_myActuator->myCan->tx.data[0] = READ_MULTI_TURN_ANGLE;
 
-	do{
-		HAL_CAN_AddTxMessage(_myActuator->myCan->hcan, &_myActuator->myCan->tx.header, _myActuator->myCan->tx.data, &_myActuator->myCan->tx.mailbox);
-		HAL_Delay(1);
-		HAL_CAN_GetRxMessage(_myActuator->myCan->hcan, _myActuator->myCan->canFilter.FilterFIFOAssignment, &_myActuator->myCan->rx.header, _myActuator->myCan->rx.data);
-		tries++;
-		if(tries > MAX_TRIES_TO_RECIEVE_DATA){
-			_myActuator->errors.errorCommunaciton = 1;
-			return;
-		}
-	}while((_myActuator->myCan->rx.data[0] != READ_MULTI_TURN_ANGLE) && (_myActuator->canID == _myActuator->myCan->rx.header.StdId));
+	if(sendAndRecieveData(_myActuator) < 0){
+		myErrorHandler();
+		return;
+	}
 
 	_myActuator->myActStat.multiTurnAngle = ((int64_t)0x0000<<56 |_myActuator->myCan->rx.data[7] << 48 | _myActuator->myCan->rx.data[6]<<40 | _myActuator->myCan->rx.data[5]<<32 | _myActuator->myCan->rx.data[4]<<24 | _myActuator->myCan->rx.data[3]<<16 | _myActuator->myCan->rx.data[2]<<8 | _myActuator->myCan->rx.data[1]);
 
@@ -175,78 +155,51 @@ void myReadMultiTurnAngle(MyActuator* _myActuator){
 }
 
 void myReadMotorStatus(MyActuator* _myActuator){
-	uint8_t tries = 0;
 	_myActuator->myCan->tx.header.StdId = _myActuator->canID;
 
 	_myActuator->myCan->tx.data[0] = READ_MOTOR_STATUS_1;
 
-	do{
-		HAL_CAN_AddTxMessage(_myActuator->myCan->hcan, &_myActuator->myCan->tx.header, _myActuator->myCan->tx.data, &_myActuator->myCan->tx.mailbox);
-		HAL_Delay(1);
-		HAL_CAN_GetRxMessage(_myActuator->myCan->hcan, _myActuator->myCan->canFilter.FilterFIFOAssignment, &_myActuator->myCan->rx.header, _myActuator->myCan->rx.data);
-		tries++;
-		if(tries > MAX_TRIES_TO_RECIEVE_DATA){
-			_myActuator->errors.errorCommunaciton = 1;
-			return;
-		}
-	}while((_myActuator->myCan->rx.data[0] != READ_MOTOR_STATUS_1) && (_myActuator->canID != _myActuator->myCan->rx.header.StdId));
-
-	if(tries <= MAX_TRIES_TO_RECIEVE_DATA){ // Means Communaciton Succesfful
-		_myActuator->myActStat.temp = (int8_t)_myActuator->myCan->rx.data[1];
-		_myActuator->myActStat.voltage =((uint16_t)_myActuator->myCan->rx.data[4] << 8) | _myActuator->myCan->rx.data[3];
-		_myActuator->errors.errorVoltage = ((_myActuator->myCan->rx.data[7] & 0x01) ? ERROR_MOTOR : 0);
-		_myActuator->errors.errorTemp = ((_myActuator->myCan->rx.data[7] & 0x08) ? ERROR_MOTOR : 0);
+	if(sendAndRecieveData(_myActuator) < 0){
+		myErrorHandler();
+		return;
 	}
 
-	clearBuffers(_myActuator->myCan);
+	_myActuator->myActStat.temp = (int8_t)_myActuator->myCan->rx.data[1];
+	_myActuator->myActStat.voltage =((uint16_t)_myActuator->myCan->rx.data[4] << 8) | _myActuator->myCan->rx.data[3];
+	_myActuator->errors.errorVoltage = ((_myActuator->myCan->rx.data[7] & 0x01) ? ERROR_MOTOR : 0);
+	_myActuator->errors.errorTemp = ((_myActuator->myCan->rx.data[7] & 0x08) ? ERROR_MOTOR : 0);
 
-	tries = 0;
+	clearBuffers(_myActuator->myCan);
 
 	_myActuator->myCan->tx.data[0] = READ_MOTOR_STATUS_2;
 
-	do{
-		HAL_CAN_AddTxMessage(_myActuator->myCan->hcan, &_myActuator->myCan->tx.header, _myActuator->myCan->tx.data, &_myActuator->myCan->tx.mailbox);
-		HAL_Delay(1);
-		HAL_CAN_GetRxMessage(_myActuator->myCan->hcan, _myActuator->myCan->canFilter.FilterFIFOAssignment, &_myActuator->myCan->rx.header, _myActuator->myCan->rx.data);
-		tries++;
-		if(tries > MAX_TRIES_TO_RECIEVE_DATA){
-			_myActuator->errors.errorCommunaciton = 1;
-			return;
-		}
-	}while((_myActuator->myCan->rx.data[0] != READ_MOTOR_STATUS_2) && (_myActuator->canID !=_myActuator->myCan->rx.header.StdId));
-
-	if(tries <= MAX_TRIES_TO_RECIEVE_DATA){ // Means Communaciton Succesfful
-		_myActuator->myActStat.temp = (int8_t)_myActuator->myCan->rx.data[1];
-		_myActuator->myActStat.torqueCurrent =((int16_t)_myActuator->myCan->rx.data[3] << 8) | _myActuator->myCan->rx.data[2];
-		_myActuator->myActStat.speed =((int16_t)_myActuator->myCan->rx.data[5] << 8) | _myActuator->myCan->rx.data[4];
-		_myActuator->myActStat.encoder =((uint16_t)_myActuator->myCan->rx.data[7] << 8) | _myActuator->myCan->rx.data[6];
+	if(sendAndRecieveData(_myActuator) < 0){
+		myErrorHandler();
+		return;
 	}
+
+	_myActuator->myActStat.temp = (int8_t)_myActuator->myCan->rx.data[1];
+	_myActuator->myActStat.torqueCurrent =((int16_t)_myActuator->myCan->rx.data[3] << 8) | _myActuator->myCan->rx.data[2];
+	_myActuator->myActStat.speed =((int16_t)_myActuator->myCan->rx.data[5] << 8) | _myActuator->myCan->rx.data[4];
+	_myActuator->myActStat.encoder =((uint16_t)_myActuator->myCan->rx.data[7] << 8) | _myActuator->myCan->rx.data[6];
+
 	clearBuffers(_myActuator->myCan);
 
-	tries = 0;
 	_myActuator->myCan->tx.data[0] = READ_MOTOR_STATUS_3;
 
-	do{
-		HAL_CAN_AddTxMessage(_myActuator->myCan->hcan, &_myActuator->myCan->tx.header, _myActuator->myCan->tx.data, &_myActuator->myCan->tx.mailbox);
-		HAL_Delay(1);
-		HAL_CAN_GetRxMessage(_myActuator->myCan->hcan, _myActuator->myCan->canFilter.FilterFIFOAssignment, &_myActuator->myCan->rx.header, _myActuator->myCan->rx.data);
-		tries++;
-		if(tries > MAX_TRIES_TO_RECIEVE_DATA){
-			_myActuator->errors.errorCommunaciton = 1;
-			return;
-		}
-	}while((_myActuator->myCan->rx.data[0] != READ_MOTOR_STATUS_3) && (_myActuator->canID != _myActuator->myCan->rx.header.StdId));
-
-	if(tries <= MAX_TRIES_TO_RECIEVE_DATA){ // Means Communaciton Succesfful
-		_myActuator->myActStat.temp = _myActuator->myCan->rx.data[1];
-		_myActuator->myActStat.phaseACurrent =((int16_t)_myActuator->myCan->rx.data[3] << 8) | _myActuator->myCan->rx.data[2];
-		_myActuator->myActStat.phaseBCurrent =((int16_t)_myActuator->myCan->rx.data[5] << 8) | _myActuator->myCan->rx.data[4];
-		_myActuator->myActStat.phaseCCurrent =((int16_t)_myActuator->myCan->rx.data[7] << 8) | _myActuator->myCan->rx.data[6];
+	if(sendAndRecieveData(_myActuator) < 0){
+		myErrorHandler();
+		return;
 	}
+
+	_myActuator->myActStat.temp = _myActuator->myCan->rx.data[1];
+	_myActuator->myActStat.phaseACurrent =((int16_t)_myActuator->myCan->rx.data[3] << 8) | _myActuator->myCan->rx.data[2];
+	_myActuator->myActStat.phaseBCurrent =((int16_t)_myActuator->myCan->rx.data[5] << 8) | _myActuator->myCan->rx.data[4];
+	_myActuator->myActStat.phaseCCurrent =((int16_t)_myActuator->myCan->rx.data[7] << 8) | _myActuator->myCan->rx.data[6];
+
 }
 
 void myWritePID(MyActuator* _myActuator, uint8_t angleKp, uint8_t angleKi, uint8_t speedKp, uint8_t speedKi, uint8_t torqueKp, uint8_t torqueKi, int8_t WRITE_PID_RAM_or_ROM){
-	uint8_t tries = 0;
 	_myActuator->myCan->tx.header.StdId = _myActuator->canID;
 
 	_myActuator->myCan->tx.data[0] = WRITE_PID_RAM_or_ROM;
@@ -257,22 +210,16 @@ void myWritePID(MyActuator* _myActuator, uint8_t angleKp, uint8_t angleKi, uint8
 	_myActuator->myCan->tx.data[6] = torqueKp;
 	_myActuator->myCan->tx.data[7] = torqueKi;
 
-	do{
-		HAL_CAN_AddTxMessage(_myActuator->myCan->hcan, &_myActuator->myCan->tx.header, _myActuator->myCan->tx.data, &_myActuator->myCan->tx.mailbox);
-		HAL_Delay(1);
-		HAL_CAN_GetRxMessage(_myActuator->myCan->hcan, _myActuator->myCan->canFilter.FilterFIFOAssignment, &_myActuator->myCan->rx.header, _myActuator->myCan->rx.data);
-		tries++;
-		if(tries > MAX_TRIES_TO_RECIEVE_DATA){
-			_myActuator->errors.errorCommunaciton = 1;
-			return;
-		}
-	}while((_myActuator->myCan->rx.data[0] != WRITE_PID_RAM_or_ROM) && (_myActuator->canID != _myActuator->myCan->rx.header.StdId));
+	if(sendAndRecieveData(_myActuator) < 0){
+		myErrorHandler();
+		return;
+	}
 
 	clearBuffers(_myActuator->myCan);
 }
 
 void myWriteAccelToRAM(MyActuator* _myActuator, int32_t accel){
-	uint8_t tries = 0;
+
 	_myActuator->myCan->tx.header.StdId = _myActuator->canID;
 
 	_myActuator->myCan->tx.data[0] = WRITE_ACCEL_PID_RAM;
@@ -282,22 +229,15 @@ void myWriteAccelToRAM(MyActuator* _myActuator, int32_t accel){
 	_myActuator->myCan->tx.data[6] = (uint8_t)(accel>>16);
 	_myActuator->myCan->tx.data[7] = (uint8_t)(accel>>24);
 
-	do{
-		HAL_CAN_AddTxMessage(_myActuator->myCan->hcan, &_myActuator->myCan->tx.header, _myActuator->myCan->tx.data, &_myActuator->myCan->tx.mailbox);
-		HAL_Delay(1);
-		HAL_CAN_GetRxMessage(_myActuator->myCan->hcan, _myActuator->myCan->canFilter.FilterFIFOAssignment, &_myActuator->myCan->rx.header, _myActuator->myCan->rx.data);
-		tries++;
-		if(tries > MAX_TRIES_TO_RECIEVE_DATA){
-			_myActuator->errors.errorCommunaciton = 1;
-			return;
-		}
-	}while((_myActuator->myCan->rx.data[0] != WRITE_ACCEL_PID_RAM) && (_myActuator->canID != _myActuator->myCan->rx.header.StdId));
+	if(sendAndRecieveData(_myActuator) < 0){
+		myErrorHandler();
+		return;
+	}
 
 	clearBuffers(_myActuator->myCan);
 }
 
 void myWriteEncoderOffset(MyActuator* _myActuator, uint16_t offset){
-	uint8_t tries = 0;
 	_myActuator->myCan->tx.header.StdId = _myActuator->canID;
 
 	_myActuator->myCan->tx.data[0] = WRITE_ENCODER_OFFSET;
@@ -305,36 +245,23 @@ void myWriteEncoderOffset(MyActuator* _myActuator, uint16_t offset){
 	_myActuator->myCan->tx.data[6] = (uint8_t)(offset);
 	_myActuator->myCan->tx.data[7] = (uint8_t)(offset>>8);
 
-	do{
-		HAL_CAN_AddTxMessage(_myActuator->myCan->hcan, &_myActuator->myCan->tx.header, _myActuator->myCan->tx.data, &_myActuator->myCan->tx.mailbox);
-		HAL_Delay(1);
-		HAL_CAN_GetRxMessage(_myActuator->myCan->hcan, _myActuator->myCan->canFilter.FilterFIFOAssignment, &_myActuator->myCan->rx.header, _myActuator->myCan->rx.data);
-		tries++;
-		if(tries > MAX_TRIES_TO_RECIEVE_DATA){
-			_myActuator->errors.errorCommunaciton = 1;
-			return;
-		}
-	}while((_myActuator->myCan->rx.data[0] != WRITE_ENCODER_OFFSET) && (_myActuator->canID != _myActuator->myCan->rx.header.StdId));
+	if(sendAndRecieveData(_myActuator) < 0){
+		myErrorHandler();
+		return;
+	}
 
 	clearBuffers(_myActuator->myCan);
 }
 
 void myWriteEncoderZeroAsCurrent(MyActuator* _myActuator){
-	uint8_t tries = 0;
 	_myActuator->myCan->tx.header.StdId = _myActuator->canID;
 
 	_myActuator->myCan->tx.data[0] = WRITE_ENCODER_ZERO_AS_CURRENT;
 
-	do{
-		HAL_CAN_AddTxMessage(_myActuator->myCan->hcan, &_myActuator->myCan->tx.header, _myActuator->myCan->tx.data, &_myActuator->myCan->tx.mailbox);
-		HAL_Delay(1);
-		HAL_CAN_GetRxMessage(_myActuator->myCan->hcan, _myActuator->myCan->canFilter.FilterFIFOAssignment, &_myActuator->myCan->rx.header, _myActuator->myCan->rx.data);
-		tries++;
-		if(tries > MAX_TRIES_TO_RECIEVE_DATA){
-			_myActuator->errors.errorCommunaciton = 1;
-			return;
-		}
-	}while((_myActuator->myCan->rx.data[0] != WRITE_ENCODER_ZERO_AS_CURRENT) && (_myActuator->canID != _myActuator->myCan->rx.header.StdId));
+	if(sendAndRecieveData(_myActuator) < 0){
+		myErrorHandler();
+		return;
+	}
 
 	_myActuator->myActStat.encoderOffset = ((uint16_t)_myActuator->myCan->rx.data[7] << 8) | _myActuator->myCan->rx.data[6];
 
@@ -343,7 +270,6 @@ void myWriteEncoderZeroAsCurrent(MyActuator* _myActuator){
 }
 
 void myControlMultiTurn(MyActuator* _myActuator,int32_t angle, uint16_t speed, uint8_t MULTI_TURN_CONTROLtype){
-	uint8_t tries = 0;
 	_myActuator->myCan->tx.header.StdId = _myActuator->canID;
 
 	_myActuator->myCan->tx.data[0] = MULTI_TURN_CONTROLtype;
@@ -358,16 +284,10 @@ void myControlMultiTurn(MyActuator* _myActuator,int32_t angle, uint16_t speed, u
 	_myActuator->myCan->tx.data[6] = (uint8_t)(angle>>16);
 	_myActuator->myCan->tx.data[7] = (uint8_t)(angle>>24);
 
-	do{
-		HAL_CAN_AddTxMessage(_myActuator->myCan->hcan, &_myActuator->myCan->tx.header, _myActuator->myCan->tx.data, &_myActuator->myCan->tx.mailbox);
-		HAL_Delay(1);
-		HAL_CAN_GetRxMessage(_myActuator->myCan->hcan, _myActuator->myCan->canFilter.FilterFIFOAssignment, &_myActuator->myCan->rx.header, _myActuator->myCan->rx.data);
-		tries++;
-		if(tries > MAX_TRIES_TO_RECIEVE_DATA){
-			_myActuator->errors.errorCommunaciton = 1;
-			break;
-		}
-	}while((_myActuator->myCan->rx.data[0] != MULTI_TURN_CONTROLtype) && (_myActuator->canID != _myActuator->myCan->rx.header.StdId));
+	if(sendAndRecieveData(_myActuator) < 0){
+		myErrorHandler();
+		return;
+	}
 
 	getMotorParameters(_myActuator);
 
@@ -375,7 +295,6 @@ void myControlMultiTurn(MyActuator* _myActuator,int32_t angle, uint16_t speed, u
 }
 
 void myControlSingleTurn(MyActuator* _myActuator,uint8_t spin_direction, uint16_t angle, uint16_t speed, uint8_t SINGLE_TURN_CONTROLtype){
-	uint8_t tries = 0;
 	_myActuator->myCan->tx.header.StdId = _myActuator->canID;
 
 	_myActuator->myCan->tx.data[0] = SINGLE_TURN_CONTROLtype;
@@ -389,17 +308,10 @@ void myControlSingleTurn(MyActuator* _myActuator,uint8_t spin_direction, uint16_
 	_myActuator->myCan->tx.data[4] = (uint8_t)(angle);
 	_myActuator->myCan->tx.data[5] = (uint8_t)(angle>>8);
 
-	do{
-		HAL_CAN_AddTxMessage(_myActuator->myCan->hcan, &_myActuator->myCan->tx.header, _myActuator->myCan->tx.data, &_myActuator->myCan->tx.mailbox);
-		HAL_Delay(1);
-		HAL_CAN_GetRxMessage(_myActuator->myCan->hcan, _myActuator->myCan->canFilter.FilterFIFOAssignment, &_myActuator->myCan->rx.header, _myActuator->myCan->rx.data);
-		tries++;
-		if(tries > MAX_TRIES_TO_RECIEVE_DATA){
-			_myActuator->errors.errorCommunaciton = 1;
-			break;
-		}
-	}while((_myActuator->myCan->rx.data[0] != SINGLE_TURN_CONTROLtype) && (_myActuator->canID != _myActuator->myCan->rx.header.StdId));
-
+	if(sendAndRecieveData(_myActuator) < 0){
+		myErrorHandler();
+		return;
+	}
 
 	getMotorParameters(_myActuator);
 
@@ -407,8 +319,6 @@ void myControlSingleTurn(MyActuator* _myActuator,uint8_t spin_direction, uint16_
 }
 
 void myControlTorque(MyActuator* _myActuator, int16_t torqueCurrent){
-	uint8_t tries = 0;
-
 	_myActuator->myCan->tx.header.StdId = _myActuator->canID;
 
 	_myActuator->myCan->tx.data[0] = CONTROL_TORQUE;
@@ -416,16 +326,10 @@ void myControlTorque(MyActuator* _myActuator, int16_t torqueCurrent){
 	_myActuator->myCan->tx.data[4] = (uint8_t)(torqueCurrent);
 	_myActuator->myCan->tx.data[5] = (uint8_t)(torqueCurrent>>8);
 
-	do{
-		HAL_CAN_AddTxMessage(_myActuator->myCan->hcan, &_myActuator->myCan->tx.header, _myActuator->myCan->tx.data, &_myActuator->myCan->tx.mailbox);
-		HAL_Delay(1);
-		HAL_CAN_GetRxMessage(_myActuator->myCan->hcan, _myActuator->myCan->canFilter.FilterFIFOAssignment, &_myActuator->myCan->rx.header, _myActuator->myCan->rx.data);
-		tries++;
-		if(tries > MAX_TRIES_TO_RECIEVE_DATA){
-			_myActuator->errors.errorCommunaciton = 1;
-			return;
-		}
-	}while((_myActuator->myCan->rx.data[0] != CONTROL_TORQUE) && (_myActuator->canID != _myActuator->myCan->rx.header.StdId));
+	if(sendAndRecieveData(_myActuator) < 0){
+		myErrorHandler();
+		return;
+	}
 
 	getMotorParameters(_myActuator);
 
@@ -433,22 +337,14 @@ void myControlTorque(MyActuator* _myActuator, int16_t torqueCurrent){
 }
 
 void myControlSpeed(MyActuator* _myActuator, int32_t speed){
-	uint8_t tries = 0;
-
 	_myActuator->myCan->tx.header.StdId = _myActuator->canID;
 	_myActuator->myCan->tx.data[0] = CONTROL_SPEED;
 	_myActuator->myCan->tx.data[4] = (uint8_t)(speed);	_myActuator->myCan->tx.data[5] = (uint8_t)(speed>>8);	_myActuator->myCan->tx.data[6] = (uint8_t)(speed>>16);	_myActuator->myCan->tx.data[7] = (uint8_t)(speed>>24);
 
-	do{
-		HAL_CAN_AddTxMessage(_myActuator->myCan->hcan, &_myActuator->myCan->tx.header, _myActuator->myCan->tx.data, &_myActuator->myCan->tx.mailbox);
-		HAL_Delay(1);
-		HAL_CAN_GetRxMessage(_myActuator->myCan->hcan, _myActuator->myCan->canFilter.FilterFIFOAssignment, &_myActuator->myCan->rx.header, _myActuator->myCan->rx.data);
-		tries++;
-		if(tries > MAX_TRIES_TO_RECIEVE_DATA){
-			_myActuator->errors.errorCommunaciton = 1;
-			return;
-		}
-	}while((_myActuator->myCan->rx.data[0] != CONTROL_SPEED) && (_myActuator->canID != _myActuator->myCan->rx.header.StdId));
+	if(sendAndRecieveData(_myActuator) < 0){
+		myErrorHandler();
+		return;
+	}
 
 	getMotorParameters(_myActuator);
 
@@ -456,84 +352,53 @@ void myControlSpeed(MyActuator* _myActuator, int32_t speed){
 }
 
 void myControlStop(MyActuator* _myActuator){
-	uint8_t tries = 0;
-
 	_myActuator->myCan->tx.header.StdId = _myActuator->canID;
 
 	_myActuator->myCan->tx.data[0] = CONTROL_MOTOR_STOP;
 
-	do{
-		HAL_CAN_AddTxMessage(_myActuator->myCan->hcan, &_myActuator->myCan->tx.header, _myActuator->myCan->tx.data, &_myActuator->myCan->tx.mailbox);
-		HAL_Delay(1);
-		HAL_CAN_GetRxMessage(_myActuator->myCan->hcan, _myActuator->myCan->canFilter.FilterFIFOAssignment, &_myActuator->myCan->rx.header, _myActuator->myCan->rx.data);
-		tries++;
-		if(tries > MAX_TRIES_TO_RECIEVE_DATA){
-			_myActuator->errors.errorCommunaciton = 1;
-			return;
-		}
-	}while((_myActuator->myCan->rx.data[0] != CONTROL_MOTOR_STOP) && (_myActuator->canID != _myActuator->myCan->rx.header.StdId));
+	if(sendAndRecieveData(_myActuator) < 0){
+		myErrorHandler();
+		return;
+	}
 
 	clearBuffers(_myActuator->myCan);
 }
 
 void myControlOff(MyActuator* _myActuator){
-	uint8_t tries = 0;
-
 	_myActuator->myCan->tx.header.StdId = _myActuator->canID;
 
 	_myActuator->myCan->tx.data[0] = CONTROL_MOTOR_OFF;
 
-	do{
-		HAL_CAN_AddTxMessage(_myActuator->myCan->hcan, &_myActuator->myCan->tx.header, _myActuator->myCan->tx.data, &_myActuator->myCan->tx.mailbox);
-		HAL_Delay(1);
-		HAL_CAN_GetRxMessage(_myActuator->myCan->hcan, _myActuator->myCan->canFilter.FilterFIFOAssignment, &_myActuator->myCan->rx.header, _myActuator->myCan->rx.data);
-		tries++;
-		if(tries > MAX_TRIES_TO_RECIEVE_DATA){
-			_myActuator->errors.errorCommunaciton = 1;
-			return;
-		}
-	}while((_myActuator->myCan->rx.data[0] != CONTROL_MOTOR_OFF) && (_myActuator->canID != _myActuator->myCan->rx.header.StdId));
+	if(sendAndRecieveData(_myActuator) < 0){
+		myErrorHandler();
+		return;
+	}
 
 	clearBuffers(_myActuator->myCan);
 }
 
 void myClearErrorFlags(MyActuator* _myActuator){
-	uint8_t tries = 0;
 	_myActuator->myCan->tx.header.StdId = _myActuator->canID;
 
 	_myActuator->myCan->tx.data[0] = ERROR_CLEAR_FLAGS;
 
-	do{
-		HAL_CAN_AddTxMessage(_myActuator->myCan->hcan, &_myActuator->myCan->tx.header, _myActuator->myCan->tx.data, &_myActuator->myCan->tx.mailbox);
-		HAL_Delay(1);
-		HAL_CAN_GetRxMessage(_myActuator->myCan->hcan, _myActuator->myCan->canFilter.FilterFIFOAssignment, &_myActuator->myCan->rx.header, _myActuator->myCan->rx.data);
-		tries++;
-		if(tries > MAX_TRIES_TO_RECIEVE_DATA){
-			_myActuator->errors.errorCommunaciton = 1;
-			return;
-		}
-	}while((_myActuator->myCan->rx.data[0] != ERROR_CLEAR_FLAGS) && (_myActuator->canID != _myActuator->myCan->rx.header.StdId));
+	if(sendAndRecieveData(_myActuator) < 0){
+		myErrorHandler();
+		return;
+	}
 
 	clearBuffers(_myActuator->myCan);
 }
 
 void myControlRunning(MyActuator* _myActuator){
-	uint8_t tries = 0;
-
 	_myActuator->myCan->tx.header.StdId = _myActuator->canID;
 
 	_myActuator->myCan->tx.data[0] = CONTROL_MOTOR_RUNNING;
 
-	do{
-		HAL_CAN_AddTxMessage(_myActuator->myCan->hcan, &_myActuator->myCan->tx.header, _myActuator->myCan->tx.data, &_myActuator->myCan->tx.mailbox);
-		HAL_Delay(1);
-		HAL_CAN_GetRxMessage(_myActuator->myCan->hcan, _myActuator->myCan->canFilter.FilterFIFOAssignment, &_myActuator->myCan->rx.header, _myActuator->myCan->rx.data);
-		tries++;
-		if(tries > MAX_TRIES_TO_RECIEVE_DATA){
-			_myActuator->errors.errorCommunaciton = 1;
-			return;
-		}
-	}while((_myActuator->myCan->rx.data[0] != CONTROL_MOTOR_RUNNING) && (_myActuator->canID != _myActuator->myCan->rx.header.StdId));
+	if(sendAndRecieveData(_myActuator) < 0){
+		myErrorHandler();
+		return;
+	}
 
 	clearBuffers(_myActuator->myCan);
 }
