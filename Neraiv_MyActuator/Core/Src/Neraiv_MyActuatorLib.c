@@ -2,7 +2,7 @@
  * Neraiv_MyActuatorLib.c
  *
  *  Created on: Nov 17, 2023
- *      Author: erkba
+ *      Author: yigit
  */
 
 #include "Neraiv_MyActuatorLib.h"
@@ -338,8 +338,13 @@ void myControlTorque(MyActuator* _myActuator, int16_t torqueCurrent){
 
 void myControlSpeed(MyActuator* _myActuator, int32_t speed){
 	_myActuator->myCan->tx.header.StdId = _myActuator->canID;
-	_myActuator->myCan->tx.data[0] = CONTROL_SPEED;
-	_myActuator->myCan->tx.data[4] = (uint8_t)(speed);	_myActuator->myCan->tx.data[5] = (uint8_t)(speed>>8);	_myActuator->myCan->tx.data[6] = (uint8_t)(speed>>16);	_myActuator->myCan->tx.data[7] = (uint8_t)(speed>>24);
+
+	_myActuator->myCan->tx.data[0] = CONTROL_SPEED;
+
+	_myActuator->myCan->tx.data[4] = (uint8_t)(speed);
+	_myActuator->myCan->tx.data[5] = (uint8_t)(speed>>8);
+	_myActuator->myCan->tx.data[6] = (uint8_t)(speed>>16);
+	_myActuator->myCan->tx.data[7] = (uint8_t)(speed>>24);
 
 	if(sendAndRecieveData(_myActuator) < 0){
 		myErrorHandler();
