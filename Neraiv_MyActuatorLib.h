@@ -2,7 +2,7 @@
  * Neraiv_MyActuatorLib.h
  *
  *  Created on: Nov 17, 2023
- *      Author: erkba
+ *      Author: yigit
  */
 
 #ifndef INC_NERAIV_MYACTUATORLIB_H_
