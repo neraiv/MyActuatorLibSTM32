@@ -1,5 +1,7 @@
 # MyActuatorLibSTM32
-My Actuator Library for STM32 using HAL Libraries. This library targets RMD motors. These motors is controlled through CAN-BUS with 1 Mbs u can controll multiple motors with one CAN-BUS (Such a cool devices huh 😄).
+
+My Actuator Library for STM32 using HAL Libraries. This library targets RMD motors. These motors is controlled through CAN-BUS with 1 Mbs u can controll multiple motors with one CAN-BUS (Such a cool devices huh 😄). 
+U can access their page here [MyActuator](https://www.myactuator.com/).
 
 # Features
   - ## Gets motor parameters 
