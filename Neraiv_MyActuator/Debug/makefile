@@ -1,6 +1,6 @@
 ################################################################################
 # Automatically-generated file. Do not edit!
-# Toolchain: GNU Tools for STM32 (11.3.rel1)
+# Toolchain: GNU Tools for STM32 (12.3.rel1)
 ################################################################################
 
 -include ../makefile.init
@@ -60,8 +60,8 @@ all: main-build
 main-build: Neraiv_MyActuator.elf secondary-outputs
 
 # Tool invocations
-Neraiv_MyActuator.elf Neraiv_MyActuator.map: $(OBJS) $(USER_OBJS) D:\Works\STM32\Neraiv_MyActuator\STM32F407VGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "Neraiv_MyActuator.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"D:\Works\STM32\Neraiv_MyActuator\STM32F407VGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Neraiv_MyActuator.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Neraiv_MyActuator.elf Neraiv_MyActuator.map: $(OBJS) $(USER_OBJS) C:\Work\Programs\Git\MyRepos\MyActuatorLibSTM32\Neraiv_MyActuator\STM32F407VGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "Neraiv_MyActuator.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Work\Programs\Git\MyRepos\MyActuatorLibSTM32\Neraiv_MyActuator\STM32F407VGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Neraiv_MyActuator.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
