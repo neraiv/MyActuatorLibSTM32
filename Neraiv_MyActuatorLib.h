@@ -150,89 +150,194 @@ typedef struct{
 	#define ERROR_CLEAR_FLAGS				0x9B
 	#define CONTROL_MOTOR_RUNNING			0x88
 #endif
-/*
- *	You must set CAN Baud Rate to 1Mbs
+
+/**
+ * @brief Initializes the CAN bus for a MyActuator device.
+ *
+ * This function sets up the CAN bus configuration for communication with a MyActuator device.
+ * It initializes the CAN filter and prepares the CAN interface for transmission and reception.
+ *
+ * @param _myCan Pointer to a MyCan structure that will be initialized with the CAN bus configuration.
+ *               This structure should be pre-allocated by the caller.
+ *
+ * @return int8_t Returns 0 on successful initialization, or a non-zero error code if initialization fails.
  */
 int8_t myInitCanbus(MyCan* _myCan);
 
-/*
+/**
+ * @brief Creates and initializes a MyActuator object.
  *
+ * This function sets up a MyActuator structure with the provided parameters,
+ * associating it with a CAN interface and setting its basic properties.
+ *
+ * @param _myActuator Pointer to the MyActuator structure to be initialized.
+ * @param _myCan Pointer to the MyCan structure representing the CAN interface.
+ * @param canID The CAN ID to be assigned to the actuator.
+ * @param maxspeed The maximum speed limit for the actuator.
+ *
+ * @return int8_t Returns 0 on successful initialization, or a non-zero error code on failure.
  */
 int8_t myCreateActuator(MyActuator* _myActuator, MyCan* _myCan, uint32_t canID, uint16_t maxspeed);
 
-/*
- * Read PID values
+
+/**
+ * 
+ * @brief Sends and receives data over the CAN bus.
+ * 
+ * This function sends a CAN message using the provided MyCan structure, and waits for a response.
+ * It will attempt to receive data up to a maximum number of tries, and will return an error if no response is received.
+ * 
+ * @param _myActuator Pointer to the MyActuator structure representing the actuator.
  */
 void myReadPID(MyActuator* _myActuator);
 
-/*
- * Reads single turn encoder data.
+
+/**
+ * @brief Reads the encoder value of the specified actuator.
+ * 
+ * This function reads the current encoder value of the given actuator and updates
+ * the actuator's internal state with the new encoder value.
+ * 
+ * @param _myActuator Pointer to the MyActuator instance whose encoder value is to be read.
  */
 void myReadEncoder(MyActuator* _myActuator);
 
-/*
- * Reads all motor parameters
+/**
+ * @brief Reads the single turn angle of the specified actuator.
+ * 
+ * This function reads the current single turn angle of the given actuator and updates
+ * the actuator's internal state with the new angle value.
+ * 
+ * @param _myActuator Pointer to the MyActuator instance whose single turn angle is to be read.
  */
 void myReadMotorStatus(MyActuator* _myActuator);
 
-/*
- * Reads Multi Turn Angle
+/**
+ * @brief Reads the multi turn angle of the specified actuator.
+ * 
+ * This function reads the current multi turn angle of the given actuator and updates
+ * the actuator's internal state with the new angle value.
+ * 
+ * @param _myActuator Pointer to the MyActuator instance whose multi turn angle is to be read.
  */
 void myReadMultiTurnAngle(MyActuator* _myActuator);
 
-/*
- * 	Reads All parameters
+/**
+ * @brief Reads the single turn angle of the specified actuator.
+ * 
+ * This function reads the current single turn angle of the given actuator and updates
+ * the actuator's internal state with the new angle value.
+ * 
+ * @param _myActuator Pointer to the MyActuator instance whose single turn angle is to be read.
  */
 void myReadAll( MyActuator* _myActuator);
 
-/*
- * Read System Data
- * Not Avaliable for V2 motors
- */
 #ifdef MYACTUATOR_V2
+
+/**
+ * @brief Reads the system data from the specified MyActuator instance.
+ * 
+ * This function retrieves and processes the system data from the given 
+ * MyActuator instance. The data read can include various parameters 
+ * and states relevant to the actuator's operation.
+ * 
+ * @param _myActuator Pointer to the MyActuator instance from which 
+ *                    the system data will be read.
+ */
 void myReadSystemData(MyActuator* _myActuator);
 #endif
 
-/*
- * Write PID values
+/**
+ * @brief Writes the PID values to the specified actuator.
+ * 
+ * This function writes the PID values to the specified actuator, updating
+ * the actuator's internal state with the new PID values.
+ * 
+ * @param _myActuator Pointer to the MyActuator instance to which the PID values will be written.
+ * @param angleKp The proportional gain for the angle control loop.
+ * @param angleKi The integral gain for the angle control loop.
+ * @param speedKp The proportional gain for the speed control loop.
+ * @param speedKi The integral gain for the speed control loop.
+ * @param torqueKp The proportional gain for the torque control loop.
+ * @param torqueKi The integral gain for the torque control loop.
+ * @param WRITE_PID_RAM_or_ROM The type of memory to write the PID values to (RAM or ROM).
  */
 void myWritePID(MyActuator* _myActuator, uint8_t angleKp, uint8_t angleKi, uint8_t speedKp, uint8_t speedKi, uint8_t torqueKp, uint8_t torqueKi, int8_t WRITE_PID_RAM_or_ROM); //ToDo
 
-/*
- * Changes Encoder Zero
+/**
+ * @brief Writes the acceleration value to the specified actuator.
+ * 
+ * This function writes the acceleration value to the specified actuator, updating
+ * the actuator's internal state with the new acceleration value.
+ * 
+ * @param _myActuator Pointer to the MyActuator instance to which the acceleration value will be written.
+ * @param accel The acceleration value to be written to the actuator.
  */
 void myWriteEncoderZero(MyActuator* _myActuator);
 
-/*
- *
+/**
+ * @brief Writes the acceleration value to the specified actuator.
+ * 
+ * This function writes the acceleration value to the specified actuator, updating
+ * the actuator's internal state with the new acceleration value.
+ * 
+ * @param _myActuator Pointer to the MyActuator instance to which the acceleration value will be written.
+ * @param accel The acceleration value to be written to the actuator.
  */
 void myWriteEncoderOffset(MyActuator* _myActuator, uint16_t offset);
-/*
- * Turns motor to a specific degree, supports multiple turn
- * 500 , 1 dps
+
+/**
+ * @brief Writes the acceleration value to the specified actuator.
+ * 
+ * This function writes the acceleration value to the specified actuator, updating
+ * the actuator's internal state with the new acceleration value.
+ * 
+ * @param _myActuator Pointer to the MyActuator instance to which the acceleration value will be written.
+ * @param accel The acceleration value to be written to the actuator.
  */
 void myControlMultiTurn(MyActuator* _myActuator,int32_t angle, uint16_t speed, uint8_t MULTI_LOOP_CONTROLtype);
 
-/*
- * Tek tur içinde verilen noktaya verilen dönme yönünde döndürür
- * Spin direction 0 CW, 1 CCW
+/**
+ * @brief Writes the acceleration value to the specified actuator.
+ * 
+ * This function writes the acceleration value to the specified actuator, updating
+ * the actuator's internal state with the new acceleration value.
+ * 
+ * @param _myActuator Pointer to the MyActuator instance to which the acceleration value will be written.
+ * @param accel The acceleration value to be written to the actuator.
  */
 void myControlSingleTurn(MyActuator* _myActuator,uint8_t spin_direction, uint16_t angle, uint16_t speed, uint8_t SINGLE_TURN_CONTROLtype);
 
-// Saniyede speed * 0.01 DPS 1 dönüş için geçen süre
-/*
- * Verilen yönde döndür. +- ye göre.
- * 50 000 , 0.01 dps
+/**
+ * @brief Writes the acceleration value to the specified actuator.
+ * 
+ * This function writes the acceleration value to the specified actuator, updating
+ * the actuator's internal state with the new acceleration value.
+ * 
+ * @param _myActuator Pointer to the MyActuator instance to which the acceleration value will be written.
+ * @param accel The acceleration value to be written to the actuator.
  */
 void myControlSpeed(MyActuator* _myActuator, int32_t speed);
 
-/*
- * Stops motor turning
+/**
+ * @brief Writes the acceleration value to the specified actuator.
+ * 
+ * This function writes the acceleration value to the specified actuator, updating
+ * the actuator's internal state with the new acceleration value.
+ * 
+ * @param _myActuator Pointer to the MyActuator instance to which the acceleration value will be written.
+ * @param accel The acceleration value to be written to the actuator.
  */
 void myControlStop(MyActuator* _myActuator);
 
-/*
- * Error: flags
+/**
+ * @brief Writes the acceleration value to the specified actuator.
+ * 
+ * This function writes the acceleration value to the specified actuator, updating
+ * the actuator's internal state with the new acceleration value.
+ * 
+ * @param _myActuator Pointer to the MyActuator instance to which the acceleration value will be written.
+ * @param accel The acceleration value to be written to the actuator.
  */
 void myClearErrorFlags(MyActuator* _myActuator);
 

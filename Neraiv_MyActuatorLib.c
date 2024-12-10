@@ -2,10 +2,11 @@
  * Neraiv_MyActuatorLib.c
  *
  *  Created on: Nov 17, 2023
- *      Author: yigit
+ *      Author: Yigit
  */
 
 #include "Neraiv_MyActuatorLib.h"
+#include <stdint.h>
 
 void clearBuffers(MyCan* _myCan){
 	memset(_myCan->rx.data,0,8);
@@ -19,7 +20,7 @@ void getMotorParameters(MyActuator* _myActuator){
 	_myActuator->myActStat.encoder = ((uint16_t)_myActuator->myCan->rx.data[7] << 8) | _myActuator->myCan->rx.data[6];
 }
 
-int8_t sendAndRecieveData(MyActuator* _myActuator){
+int8_t sendAndReceiveData(MyActuator* _myActuator){
 	uint8_t tries = 0;
 
 	do{
@@ -76,7 +77,7 @@ void myReadPID(MyActuator* _myActuator){
 
 	_myActuator->myCan->tx.data[0] = READ_PID;
 
-	if(sendAndRecieveData(_myActuator) < 0){
+	if(sendAndReceiveData(_myActuator) < 0){
 		myErrorHandler();
 		return;
 	}
@@ -85,7 +86,7 @@ void myReadPID(MyActuator* _myActuator){
 	_myActuator->myPIDVals.PosKP = _myActuator->myCan->rx.data[3];
 	_myActuator->myPIDVals.SpdKP = _myActuator->myCan->rx.data[4];
 	_myActuator->myPIDVals.SpdKI = _myActuator->myCan->rx.data[5];
-	_myActuator->myPIDVals.TorqueKP = _myActuator->myCan->rx.data[6];
+	_myActuator->myPIDVals.TorqueKI = _myActuator->myCan->rx.data[7];
 	_myActuator->myPIDVals.TorqueKP = _myActuator->myCan->rx.data[7];
 
 
@@ -101,8 +102,8 @@ void myReadAccelPID(MyActuator* _myActuator){
 		myErrorHandler();
 		return;
 	}
-	_myActuator->myPIDVals.accelSpeed =((int32_t)_myActuator->myCan->rx.data[5] << 8 | _myActuator->myCan->rx.data[4]);
-	_myActuator->myPIDVals.accelTorque =((int32_t)_myActuator->myCan->rx.data[7] << 8 | _myActuator->myCan->rx.data[6]);
+	_myActuator->myPIDVals.accelSpeed =((int16_t)_myActuator->myCan->rx.data[5] << 8 | _myActuator->myCan->rx.data[4]);
+	_myActuator->myPIDVals.accelTorque =((int16_t)_myActuator->myCan->rx.data[7] << 8 | _myActuator->myCan->rx.data[6]);
 
 	clearBuffers(_myActuator->myCan);
 }
@@ -149,7 +150,7 @@ void myReadMultiTurnAngle(MyActuator* _myActuator){
 		return;
 	}
 
-	_myActuator->myActStat.multiTurnAngle = ((int64_t)0x0000<<56 |_myActuator->myCan->rx.data[7] << 48 | _myActuator->myCan->rx.data[6]<<40 | _myActuator->myCan->rx.data[5]<<32 | _myActuator->myCan->rx.data[4]<<24 | _myActuator->myCan->rx.data[3]<<16 | _myActuator->myCan->rx.data[2]<<8 | _myActuator->myCan->rx.data[1]);
+	_myActuator->myActStat.multiTurnAngle = ((int64_t)_myActuator->myCan->rx.data[7] << 56 | (int64_t)_myActuator->myCan->rx.data[6] << 48 | (int64_t)_myActuator->myCan->rx.data[5] << 40 | (int64_t)_myActuator->myCan->rx.data[4] << 32 | (int64_t)_myActuator->myCan->rx.data[3] << 24 | (int64_t)_myActuator->myCan->rx.data[2] << 16 | (int64_t)_myActuator->myCan->rx.data[1] << 8 | (int64_t)_myActuator->myCan->rx.data[0]);
 
 	clearBuffers(_myActuator->myCan);
 }
